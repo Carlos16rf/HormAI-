@@ -1,4 +1,3 @@
-# HormAI-
 # HormAI – Predicción Personalizada en Reproducción Asistida mediante IA
 
 HormAI es un sistema basado en inteligencia artificial diseñado para asistir al personal clínico en la toma de decisiones durante tratamientos de fecundación in vitro (FIV). A través de modelos de machine learning, predice de forma secuencial variables clave como:
