@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>HormAI - Predicción</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-image: url('static/ivi4.png');
+      background-repeat: no-repeat;
+      background-position: center top;
+      background-size: 100%;
+      background-attachment: scroll;
+      color: black;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      color: #004080;
+      margin-top: 30px;
+      text-shadow: 1px 1px 3px white;
+    }
+
+    #modelo {
+      display: block;
+      margin: 20px auto;
+      font-size: 1.2em;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    div[id^="form-"] {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    input, button {
+      margin: 5px 0;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #004c99;
+    }
+
+    #resultado {
+      width: 80%;
+      margin: 20px auto;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+  </style>
+  <script>
+    function mostrarFormulario() {
+      document.getElementById('form-aspirados').style.display = 'none';
+      document.getElementById('form-calidad').style.display = 'none';
+      document.getElementById('form-maduros').style.display = 'none';
+
+      const seleccion = document.getElementById('modelo').value;
+      if (seleccion === 'aspirados') document.getElementById('form-aspirados').style.display = 'block';
+      if (seleccion === 'calidad') document.getElementById('form-calidad').style.display = 'block';
+      if (seleccion === 'maduros') document.getElementById('form-maduros').style.display = 'block';
+
+      document.getElementById('resultado').innerHTML = '';
+    }
+
+    async function enviarFormulario(endpoint, campos, parseo = parseFloat) {
+      const datos = {};
+      campos.forEach(id => {
+        const valor = document.getElementById(id).value;
+        datos[id] = valor ? parseo(valor) : 0;
+      });
+
+      try {
+        const res = await fetch(`http://localhost:5000/predecir/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await res.json();
+
+        document.getElementById('resultado').innerHTML = `
+          <h3>Resultado</h3>
+          <p><strong>Predicción:</strong> ${resultado.prediccion}</p>
+          <p><strong>Precisión del modelo:</strong> ${resultado.porcentaje_acierto}%</p>${resultado.recomendacion_clinica ? `<p><strong>Recomendación clínica:</strong> ${resultado.recomendacion_clinica}</p>` : ''}
+        `;
+      } catch (error) {
+        document.getElementById('resultado').innerHTML = '<p>Error al obtener la predicción.</p>';
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>HormAI - Predicciones Personalizadas</h1>
+  <select id="modelo" onchange="mostrarFormulario()">
+    <option value="">-- Elige una opción --</option>
+    <option value="aspirados">Ovocitos aspirados</option>
+    <option value="calidad">Calidad embrionaria</option>
+    <option value="maduros">Ovocitos maduros</option>
+  </select>
+
+  <!-- Formulario Ovocitos Aspirados -->
+  <div id="form-aspirados" style="display:none">
+    <h3>Formulario - Ovocitos Aspirados</h3>
+    <input id="edad" placeholder="Edad (18-45 años)" type="number">
+    <input id="bmi" placeholder="BMI (18-40 kg/m²)" type="number" step="0.1">
+    <input id="amh" placeholder="AMH (0.1-10 ng/ml)" type="number" step="0.1">
+    <input id="n_folic_antral_der" placeholder="Folículos Antrales Derecho  (0-20)" type="number">
+    <input id="n_folic_antral_izq" placeholder="Folículos Antrales Izquierdo (0-20)" type="number">
+    <input id="dosis_total" placeholder="Dosis Total (500-4000 IU)" type="number">
+    <input id="rfa" placeholder="RFA (0.1 - 5.0)" type="number" step="0.01">
+    <input id="estim_final_cod" placeholder="Código Estimulación Final (1: FSH, 2: HMG, 3: LH)" type="number">
+    <input id="dias_estim_e_cl" placeholder="Días de Estimulación (6 - 14)" type="number">
+    <input id="p4_dhcg_de" placeholder="Progesterona (P4) (0.1 - 2.0 ng/mL)" type="number" step="0.01">
+    <input id="nivel_fsh_h_de" placeholder="FSH Basal (1 - 15 UI/L)" type="number" step="0.1">
+    <input id="ult_lin_endom" placeholder="Grosor Endometrial (6 - 15 mm)" type="number" step="0.1">
+    <input id="amp_fsh_e_cl" placeholder="FSH Día del Control (5 - 20 UI/L)" type="number" step="0.1">
+    <input id="amp_lh_e_cl" placeholder="LH Día del Control (1 - 15 UI/L)" type="number" step="0.1">
+    <button onclick="enviarFormulario('aspirados', [
+      'edad','bmi','amh','n_folic_antral_der','n_folic_antral_izq','dosis_total','rfa',
+      'estim_final_cod','dias_estim_e_cl','p4_dhcg_de','nivel_fsh_h_de',
+      'ult_lin_endom','amp_fsh_e_cl','amp_lh_e_cl'
+    ])">Predecir</button>
+  </div>
+
+  <!-- Formulario Calidad Embrionaria -->
+  <div id="form-calidad" style="display:none">
+    <h3>Formulario - Calidad Embrionaria</h3>
+    <input id="PATIENT AGE" placeholder="Edad (18-45 años)" type="number">
+    <input id="PATIENT BMI" placeholder="BMI (18-40 kg/m²)" type="number" step="0.1">
+    <input id="ANTIUMULLERIANA_DE" placeholder="AMH (0.1-10 ng/ml)" type="number" step="0.1">
+    <input id="N_FOLIC_ANTRAL_DER_IN.-" placeholder="Folículos Der (0-20)" type="number">
+    <input id="N_FOLIC_ANTRAL_IZQ_IN.-" placeholder="Folículos Izq (0-20)" type="number">
+    <input id="DOSIS TOTAL" placeholder="Dosis Total (500-4000 IU)" type="number">
+    <input id="RFA" placeholder="RFA (0.1 - 5.0)" type="number" step="0.01">
+    <input id="ESTIMULACIÓN FINAL COD" placeholder="Código Estimulación Final (1: FSH, 2: HMG, 3: LH)" type="text">
+    <input id="ASPIRADOS_PREDICT (0-30)" placeholder="Ovocitos Aspirados" type="number">
+    <input id="NIVEL_FSH_H_DE.-_OK" placeholder="FSH Basal (1 - 15 UI/L)" type="number" step="0.1">
+    <input id="P4_DHCG_DE.-" placeholder="Progesterona (0.1 - 2.0 ng/mL)" type="number" step="0.01">
+    <input id="dias_estim_e_cl.-" placeholder="Días Estimulación (6 - 14)" type="number">
+    <input id="ampollas_fsh_e_cl.-" placeholder="FSH Control (5 - 20 UI/L)" type="number" step="0.1">
+    <input id="ampollas_lh_e_cl.-" placeholder="LH Control (1 - 15 UI/L)" type="number" step="0.1">
+    <input id="d2_celulas.-" placeholder="Células Día 2 (2-4)" type="text">
+    <input id="d3_celulas.-" placeholder="Células Día 3(6-8)" type="text">
+    <input id="dia5.-" placeholder="Desarrollo Día 5" type="text">
+    <input id="OVO_MII_INSEMIN_IN.-_OK_GRUPO" placeholder="Madurez ovocitaria (Bajo, Medio, Alto)" type="text">
+    <button onclick="enviarFormulario('calidad', [
+      'PATIENT AGE', 'PATIENT BMI', 'ANTIUMULLERIANA_DE',
+      'N_FOLIC_ANTRAL_DER_IN.-', 'N_FOLIC_ANTRAL_IZQ_IN.-',
+      'DOSIS TOTAL', 'RFA', 'ESTIMULACIÓN FINAL COD',
+      'ASPIRADOS_PREDICT', 'NIVEL_FSH_H_DE.-_OK', 'P4_DHCG_DE.-',
+      'dias_estim_e_cl.-', 'ampollas_fsh_e_cl.-', 'ampollas_lh_e_cl.-',
+      'd2_celulas.-', 'd3_celulas.-', 'dia5.-', 'OVO_MII_INSEMIN_IN.-_OK_GRUPO'
+    ])">Predecir</button>
+  </div>
+
+  <!-- Formulario Ovocitos Maduros -->
+  <div id="form-maduros" style="display:none">
+    <h3>Formulario - Ovocitos Maduros</h3>
+    <input id="PATIENT AGE" placeholder="Edad (18-45 años)" type="number">
+    <input id="PATIENT BMI" placeholder="BMI (18-40 kg/m²)" type="number" step="0.1">
+    <input id="ANTIUMULLERIANA_DE" placeholder="AMH (0.1-10 ng/ml)" type="number" step="0.1">
+    <input id="N_FOLIC_ANTRAL_DER_IN.-" placeholder="Folículos Der (0-20)" type="number">
+    <input id="N_FOLIC_ANTRAL_IZQ_IN.-" placeholder="Folículos Izq (0-20)" type="number">
+    <input id="DOSIS TOTAL" placeholder="Dosis Total (500-4000 IU)" type="number">
+    <input id="RFA" placeholder="RFA (0.1 - 5.0)" type="number" step="0.01">
+    <input id="ESTIMULACIÓN FINAL COD (1: FSH, 2: HMG, 3: LH)" placeholder="Código Estimulación Final" type="text">
+    <input id="ASPIRADOS_PREDICT" placeholder="Ovocitos Aspirados (0-30)" type="number">
+    <input id="NIVEL_FSH_H_DE.-_OK" placeholder="FSH Basal (1 - 15 UI/L)" type="number" step="0.1">
+    <input id="P4_DHCG_DE.-" placeholder="Progesterona (0.1 - 2.0 ng/mL)" type="number" step="0.01">
+    <input id="dias_estim_e_cl.-" placeholder="Días Estimulación (6 - 14)" type="number">
+    <input id="ampollas_fsh_e_cl.-" placeholder="FSH Control (5 - 20 UI/L)" type="number" step="0.1">
+    <input id="ampollas_lh_e_cl.-" placeholder="LH Control (1 - 15 UI/L)" type="number" step="0.1">
+    <button onclick="enviarFormulario('maduros', [
+      'PATIENT AGE', 'PATIENT BMI', 'ANTIUMULLERIANA_DE',
+      'N_FOLIC_ANTRAL_DER_IN.-', 'N_FOLIC_ANTRAL_IZQ_IN.-',
+      'DOSIS TOTAL', 'RFA', 'ESTIMULACIÓN FINAL COD',
+      'ASPIRADOS_PREDICT', 'NIVEL_FSH_H_DE.-_OK', 'P4_DHCG_DE.-',
+      'dias_estim_e_cl.-', 'ampollas_fsh_e_cl.-', 'ampollas_lh_e_cl.-'
+    ])">Predecir</button>
+  </div>
+
+  <div id="resultado"></div>
+</body>
+</html>
